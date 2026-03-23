@@ -1,12 +1,17 @@
+import logging
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
+from app.core.exceptions import AnalysisServiceError, PDFExtractionError
 from app.domain.models import AnalysisResponse
 from app.infra.database.connection import get_db
 from app.infra.database.repositories import AnalysisRepository
 from app.services.analyzer import ResumeAnalyzerService
 from app.services.pdf_extractor import PDFExtractorService
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 pdf_extractor = PDFExtractorService()
@@ -18,7 +23,10 @@ analyzer = ResumeAnalyzerService()
     response_model=AnalysisResponse,
     status_code=201,
     summary="Analyze a resume",
-    description="Upload a PDF resume and receive a structured evaluation with score, level, strengths, weaknesses, suggestions, and detected skills.",
+    description=(
+        "Upload a PDF resume and receive a structured evaluation with score, "
+        "career level, strengths, weaknesses, improvement suggestions, and detected skills."
+    ),
 )
 async def analyze_resume(
     file: UploadFile = File(..., description="Resume file in PDF format"),
@@ -32,18 +40,24 @@ async def analyze_resume(
     if len(file_bytes) == 0:
         raise HTTPException(status_code=400, detail="The uploaded file is empty.")
 
+    max_bytes = settings.max_upload_size_mb * 1024 * 1024
+    if len(file_bytes) > max_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File exceeds the {settings.max_upload_size_mb}MB size limit.",
+        )
+
     try:
         text = pdf_extractor.extract_text(file_bytes)
-    except ValueError as exc:
+    except PDFExtractionError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
-    except Exception:
-        raise HTTPException(status_code=422, detail="Failed to process the PDF file.")
 
     try:
         result = analyzer.analyze(text)
-    except Exception:
-        raise HTTPException(status_code=502, detail="Analysis service is currently unavailable.")
+    except AnalysisServiceError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
 
     repo = AnalysisRepository(db)
     record = repo.save(file.filename, text, result)
+    logger.info("Resume analyzed: filename=%s score=%d level=%s", file.filename, result.score, result.level)
     return record

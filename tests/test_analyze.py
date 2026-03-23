@@ -19,7 +19,9 @@ FAKE_PDF = b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF"
 def test_health_check(client):
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    data = response.json()
+    assert data["status"] == "ok"
+    assert "version" in data
 
 
 def test_analyze_missing_file(client):
@@ -60,10 +62,23 @@ def test_analyze_pdf_success(mock_extractor, mock_analyzer, client):
     assert "created_at" in data
 
 
-def test_get_history_returns_list(client):
+def test_get_history_returns_paginated(client):
     response = client.get("/history")
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+    data = response.json()
+    assert "items" in data
+    assert "total" in data
+    assert "page" in data
+    assert "pages" in data
+    assert isinstance(data["items"], list)
+
+
+def test_get_history_pagination_params(client):
+    response = client.get("/history?page=1&page_size=5")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["page"] == 1
+    assert data["page_size"] == 5
 
 
 def test_get_history_item_not_found(client):
@@ -85,8 +100,9 @@ def test_get_history_after_analysis(mock_extractor, mock_analyzer, client):
 
     response = client.get("/history")
     assert response.status_code == 200
-    history = response.json()
-    assert len(history) >= 1
-    assert "score" in history[0]
-    assert "level" in history[0]
-    assert "filename" in history[0]
+    data = response.json()
+    assert data["total"] >= 1
+    assert len(data["items"]) >= 1
+    assert "score" in data["items"][0]
+    assert "level" in data["items"][0]
+    assert "filename" in data["items"][0]

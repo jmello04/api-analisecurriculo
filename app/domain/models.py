@@ -1,7 +1,9 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Generic, List, TypeVar
 
 from pydantic import BaseModel, Field
+
+T = TypeVar("T")
 
 
 class AnalysisResult(BaseModel):
@@ -29,3 +31,11 @@ class AnalysisListItem(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: List[T]
+    total: int
+    page: int
+    page_size: int
+    pages: int
