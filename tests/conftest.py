@@ -20,6 +20,7 @@ def db_engine():
     Base.metadata.create_all(bind=engine)
     yield engine
     Base.metadata.drop_all(bind=engine)
+    engine.dispose()
     if os.path.exists("test_resume.db"):
         os.remove("test_resume.db")
 

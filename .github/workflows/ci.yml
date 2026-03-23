@@ -18,14 +18,14 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Install ruff
+      - name: Instalar ruff
         run: pip install ruff==0.7.0
 
-      - name: Run linter
+      - name: Verificar código
         run: ruff check app/ tests/
 
   test:
-    name: Test
+    name: Testes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,10 +35,10 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Instalar dependências
+        run: pip install -r requirements-dev.txt
 
-      - name: Run tests
+      - name: Executar testes
         run: pytest tests/ -v --tb=short
         env:
           ANTHROPIC_API_KEY: test_key_placeholder

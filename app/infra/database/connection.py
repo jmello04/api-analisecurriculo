@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, Integer, JSON, String, Text, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -22,7 +22,7 @@ class ResumeAnalysisORM(Base):
     weak_points = Column(JSON, nullable=False)
     suggestions = Column(JSON, nullable=False)
     detected_skills = Column(JSON, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
 
 def create_tables() -> None:
