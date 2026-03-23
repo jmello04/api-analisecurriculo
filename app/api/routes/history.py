@@ -13,29 +13,29 @@ router = APIRouter()
 @router.get(
     "/history",
     response_model=PaginatedResponse[AnalysisListItem],
-    summary="List analysis history",
-    description="Returns a paginated list of all previous resume analyses, ordered by most recent first.",
+    summary="Listar histórico de análises",
+    description="Retorna uma lista paginada de todas as análises realizadas, ordenadas da mais recente para a mais antiga.",
 )
-def list_history(
-    page: int = Query(1, ge=1, description="Page number (starting at 1)"),
-    page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
+def listar_historico(
+    page: int = Query(1, ge=1, description="Número da página (a partir de 1)"),
+    page_size: int = Query(20, ge=1, le=100, description="Quantidade de itens por página"),
     db: Session = Depends(get_db),
 ) -> PaginatedResponse[AnalysisListItem]:
     repo = AnalysisRepository(db)
-    items, total = repo.list_paginated(page=page, page_size=page_size)
-    pages = math.ceil(total / page_size) if total > 0 else 0
-    return PaginatedResponse(items=items, total=total, page=page, page_size=page_size, pages=pages)
+    itens, total = repo.list_paginated(page=page, page_size=page_size)
+    paginas = math.ceil(total / page_size) if total > 0 else 0
+    return PaginatedResponse(items=itens, total=total, page=page, page_size=page_size, pages=paginas)
 
 
 @router.get(
     "/history/{analysis_id}",
     response_model=AnalysisResponse,
-    summary="Get a specific analysis",
-    description="Returns the full details of a resume analysis by its ID.",
+    summary="Buscar análise por ID",
+    description="Retorna os detalhes completos de uma análise específica pelo seu ID.",
 )
-def get_analysis(analysis_id: int, db: Session = Depends(get_db)) -> AnalysisResponse:
+def buscar_analise(analysis_id: int, db: Session = Depends(get_db)) -> AnalysisResponse:
     repo = AnalysisRepository(db)
-    record = repo.get_by_id(analysis_id)
-    if not record:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
-    return record
+    registro = repo.get_by_id(analysis_id)
+    if not registro:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+    return registro

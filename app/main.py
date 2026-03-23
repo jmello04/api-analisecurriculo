@@ -17,15 +17,15 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting Resume Analyzer API")
+    logger.info("Iniciando Resume Analyzer API")
     create_tables()
     yield
-    logger.info("Resume Analyzer API stopped")
+    logger.info("Resume Analyzer API encerrada")
 
 
 app = FastAPI(
     title="Resume Analyzer API",
-    description="API for resume analysis with scoring, skill detection, and structured feedback.",
+    description="API para análise de currículos com pontuação, detecção de habilidades e feedback estruturado.",
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/docs",
@@ -42,26 +42,26 @@ app.add_middleware(
 
 
 @app.middleware("http")
-async def request_logging_middleware(request: Request, call_next):
+async def middleware_log_requisicoes(request: Request, call_next):
     request_id = str(uuid.uuid4())[:8]
-    start = time.perf_counter()
+    inicio = time.perf_counter()
     response = await call_next(request)
-    duration_ms = round((time.perf_counter() - start) * 1000, 2)
+    duracao_ms = round((time.perf_counter() - inicio) * 1000, 2)
     logger.info(
         "%s %s %d %.1fms [%s]",
         request.method,
         request.url.path,
         response.status_code,
-        duration_ms,
+        duracao_ms,
         request_id,
     )
     return response
 
 
-app.include_router(analyze.router, tags=["Analysis"])
-app.include_router(history.router, tags=["History"])
+app.include_router(analyze.router, tags=["Análise"])
+app.include_router(history.router, tags=["Histórico"])
 
 
-@app.get("/health", tags=["Health"], summary="Health check")
+@app.get("/health", tags=["Status"], summary="Verificação de saúde da API")
 def health_check():
-    return {"status": "ok", "version": "1.0.0"}
+    return {"status": "ok", "versao": "1.0.0"}

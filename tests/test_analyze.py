@@ -7,9 +7,9 @@ from app.domain.models import AnalysisResult
 MOCK_RESULT = AnalysisResult(
     score=80,
     level="Pleno",
-    strong_points=["Strong Python skills", "Solid project portfolio"],
-    weak_points=["No formal leadership experience"],
-    suggestions=["Pursue cloud certifications", "Contribute to open source projects"],
+    strong_points=["Forte domínio de Python", "Portfólio de projetos consistente"],
+    weak_points=["Sem experiência formal em liderança"],
+    suggestions=["Obter certificação em nuvem", "Contribuir com projetos de código aberto"],
     detected_skills=["Python", "FastAPI", "PostgreSQL", "Docker", "REST APIs"],
 )
 
@@ -21,18 +21,18 @@ def test_health_check(client):
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
-    assert "version" in data
+    assert "versao" in data
 
 
-def test_analyze_missing_file(client):
+def test_analisar_sem_arquivo(client):
     response = client.post("/analyze")
     assert response.status_code == 422
 
 
-def test_analyze_wrong_file_type(client):
+def test_analisar_tipo_invalido(client):
     response = client.post(
         "/analyze",
-        files={"file": ("resume.txt", b"plain text content", "text/plain")},
+        files={"file": ("curriculo.txt", b"conteudo em texto simples", "text/plain")},
     )
     assert response.status_code == 400
     assert "PDF" in response.json()["detail"]
@@ -40,13 +40,13 @@ def test_analyze_wrong_file_type(client):
 
 @patch("app.api.routes.analyze.analyzer")
 @patch("app.api.routes.analyze.pdf_extractor")
-def test_analyze_pdf_success(mock_extractor, mock_analyzer, client):
-    mock_extractor.extract_text.return_value = "Jane Doe - Senior Software Engineer"
+def test_analisar_pdf_sucesso(mock_extractor, mock_analyzer, client):
+    mock_extractor.extract_text.return_value = "Maria Silva - Engenheira de Software Sênior"
     mock_analyzer.analyze.return_value = MOCK_RESULT
 
     response = client.post(
         "/analyze",
-        files={"file": ("resume.pdf", FAKE_PDF, "application/pdf")},
+        files={"file": ("curriculo.pdf", FAKE_PDF, "application/pdf")},
     )
 
     assert response.status_code == 201
@@ -57,12 +57,12 @@ def test_analyze_pdf_success(mock_extractor, mock_analyzer, client):
     assert isinstance(data["weak_points"], list)
     assert isinstance(data["suggestions"], list)
     assert isinstance(data["detected_skills"], list)
-    assert data["filename"] == "resume.pdf"
+    assert data["filename"] == "curriculo.pdf"
     assert "id" in data
     assert "created_at" in data
 
 
-def test_get_history_returns_paginated(client):
+def test_historico_retorna_paginado(client):
     response = client.get("/history")
     assert response.status_code == 200
     data = response.json()
@@ -73,7 +73,7 @@ def test_get_history_returns_paginated(client):
     assert isinstance(data["items"], list)
 
 
-def test_get_history_pagination_params(client):
+def test_historico_parametros_paginacao(client):
     response = client.get("/history?page=1&page_size=5")
     assert response.status_code == 200
     data = response.json()
@@ -81,21 +81,21 @@ def test_get_history_pagination_params(client):
     assert data["page_size"] == 5
 
 
-def test_get_history_item_not_found(client):
+def test_historico_nao_encontrado(client):
     response = client.get("/history/999999")
     assert response.status_code == 404
-    assert "not found" in response.json()["detail"].lower()
+    assert "não encontrada" in response.json()["detail"]
 
 
 @patch("app.api.routes.analyze.analyzer")
 @patch("app.api.routes.analyze.pdf_extractor")
-def test_get_history_after_analysis(mock_extractor, mock_analyzer, client):
-    mock_extractor.extract_text.return_value = "John Doe - Backend Developer"
+def test_historico_apos_analise(mock_extractor, mock_analyzer, client):
+    mock_extractor.extract_text.return_value = "João Costa - Desenvolvedor Backend"
     mock_analyzer.analyze.return_value = MOCK_RESULT
 
     client.post(
         "/analyze",
-        files={"file": ("test_resume.pdf", FAKE_PDF, "application/pdf")},
+        files={"file": ("curriculo_teste.pdf", FAKE_PDF, "application/pdf")},
     )
 
     response = client.get("/history")

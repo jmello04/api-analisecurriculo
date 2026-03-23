@@ -1,15 +1,15 @@
 .PHONY: help up down build test lint format migrate shell
 
 help:
-	@echo "Available commands:"
-	@echo "  up        - Start all services with Docker Compose"
-	@echo "  down      - Stop all services"
-	@echo "  build     - Rebuild Docker images"
-	@echo "  test      - Run the test suite"
-	@echo "  lint      - Run the linter (ruff)"
-	@echo "  format    - Auto-format code (ruff format)"
-	@echo "  migrate   - Apply pending database migrations"
-	@echo "  shell     - Open a shell inside the API container"
+	@echo "Comandos disponíveis:"
+	@echo "  up        - Sobe todos os serviços com Docker Compose"
+	@echo "  down      - Para todos os serviços"
+	@echo "  build     - Reconstrói as imagens Docker"
+	@echo "  test      - Executa os testes"
+	@echo "  lint      - Verifica o código com ruff"
+	@echo "  format    - Formata o código com ruff"
+	@echo "  migrate   - Aplica as migrações do banco de dados"
+	@echo "  shell     - Abre um shell no container da API"
 
 up:
 	docker-compose up --build

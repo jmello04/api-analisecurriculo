@@ -1,82 +1,99 @@
 # Resume Analyzer API
 
 ![CI](https://github.com/jmello04/resume-analyzer-api/actions/workflows/ci.yml/badge.svg)
-![Python](https://img.shields.io/badge/python-3.12-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-compose-2496ED?logo=docker&logoColor=white)
 
-REST API for resume analysis with automatic scoring, skill detection, and structured feedback.
+API REST para análise automática de currículos em PDF, com pontuação, classificação de nível profissional, detecção de habilidades e feedback estruturado.
 
-## Features
+---
 
-- PDF upload and text extraction via `pdfplumber`
-- Automated scoring (0–100) and career level classification (Júnior / Pleno / Sênior)
-- Strengths, weaknesses, improvement suggestions, and detected skills
-- Paginated analysis history stored in PostgreSQL
-- Database migrations with Alembic
-- Structured JSON logging
-- CORS support
-- CI/CD pipeline with GitHub Actions
+## Funcionalidades
 
-## Tech Stack
+- Upload de currículo em PDF com extração automática de texto
+- Pontuação de 0 a 100 com classificação de nível (Júnior / Pleno / Sênior)
+- Identificação de pontos fortes, pontos fracos e sugestões de melhoria
+- Detecção de habilidades técnicas e comportamentais
+- Histórico de análises com paginação, armazenado em PostgreSQL
+- Migrações de banco de dados com Alembic
+- Logs estruturados em JSON
+- Suporte a CORS
+- Pipeline de CI/CD com GitHub Actions
 
-| Layer | Technology |
-|-------|-----------|
-| API Framework | FastAPI |
-| Database | PostgreSQL + SQLAlchemy |
-| Migrations | Alembic |
-| PDF Extraction | pdfplumber |
-| Validation | Pydantic v2 |
-| Containerization | Docker + Docker Compose |
+---
+
+## Stack
+
+| Camada | Tecnologia |
+|--------|-----------|
+| Framework | FastAPI |
+| Banco de dados | PostgreSQL + SQLAlchemy |
+| Migrações | Alembic |
+| Extração de PDF | pdfplumber |
+| Validação | Pydantic v2 |
+| Containerização | Docker + Docker Compose |
 | Linting | Ruff |
-| Testing | pytest |
+| Testes | pytest |
 
-## Requirements
+---
 
-- Docker and Docker Compose
-- Anthropic API Key
+## Requisitos
 
-## Quick Start
+- Docker e Docker Compose instalados
+- Chave de API da Anthropic
+
+---
+
+## Início Rápido
 
 ```bash
 git clone https://github.com/jmello04/resume-analyzer-api.git
 cd resume-analyzer-api
 
 cp .env.example .env
-# Edit .env and set your ANTHROPIC_API_KEY
+```
 
+Edite o arquivo `.env` e preencha o campo `ANTHROPIC_API_KEY` com sua chave.
+
+```bash
 docker-compose up --build
 ```
 
-The API will be available at `http://localhost:8000`.
+A API estará disponível em `http://localhost:8000`.
 
-Interactive documentation: `http://localhost:8000/docs`
+Documentação interativa: `http://localhost:8000/docs`
 
-## API Endpoints
+---
 
-| Method | Endpoint | Description |
-|--------|---------|-------------|
-| `POST` | `/analyze` | Upload and analyze a PDF resume |
-| `GET` | `/history` | List previous analyses (paginated) |
-| `GET` | `/history/{id}` | Get a specific analysis by ID |
-| `GET` | `/health` | Health check |
+## Endpoints
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `POST` | `/analyze` | Envia um currículo PDF para análise |
+| `GET` | `/history` | Lista o histórico de análises (paginado) |
+| `GET` | `/history/{id}` | Retorna uma análise específica por ID |
+| `GET` | `/health` | Verificação de saúde da API |
 
 ### POST /analyze
 
 ```bash
 curl -X POST http://localhost:8000/analyze \
-  -F "file=@resume.pdf"
+  -F "file=@curriculo.pdf"
 ```
 
-**Response:**
+**Resposta:**
+
 ```json
 {
   "id": 1,
-  "filename": "resume.pdf",
+  "filename": "curriculo.pdf",
   "score": 78,
   "level": "Pleno",
-  "strong_points": ["Strong Python background", "Relevant project experience"],
-  "weak_points": ["No cloud certifications"],
-  "suggestions": ["Obtain AWS or GCP certification"],
+  "strong_points": ["Experiência sólida com Python", "Portfólio relevante"],
+  "weak_points": ["Sem certificações em nuvem"],
+  "suggestions": ["Obter certificação AWS ou GCP"],
   "detected_skills": ["Python", "FastAPI", "PostgreSQL", "Docker"],
   "created_at": "2024-01-01T00:00:00"
 }
@@ -84,13 +101,14 @@ curl -X POST http://localhost:8000/analyze \
 
 ### GET /history
 
-Supports pagination via query parameters:
+Suporte à paginação via query params:
 
 ```bash
 curl "http://localhost:8000/history?page=1&page_size=20"
 ```
 
-**Response:**
+**Resposta:**
+
 ```json
 {
   "items": [...],
@@ -101,75 +119,65 @@ curl "http://localhost:8000/history?page=1&page_size=20"
 }
 ```
 
-### GET /history/{id}
+---
+
+## Desenvolvimento
 
 ```bash
-curl http://localhost:8000/history/1
-```
-
-## Development
-
-```bash
-# Install dependencies
 pip install -r requirements.txt
 
-# Run tests
-make test
-
-# Lint code
-make lint
-
-# Format code
-make format
-
-# Apply database migrations
-make migrate
-
-# Start with Docker
-make up
+make test      # Executa os testes
+make lint      # Verifica o código
+make format    # Formata o código
+make migrate   # Aplica as migrações
+make up        # Sobe com Docker
 ```
 
-## Environment Variables
+---
 
-| Variable | Description | Default |
-|----------|-----------|---------|
-| `ANTHROPIC_API_KEY` | API key (required) | — |
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:postgres@localhost:5432/resume_analyzer` |
-| `ANALYSIS_MODEL` | Model identifier | `claude-opus-4-6` |
-| `LOG_LEVEL` | Logging level | `INFO` |
-| `MAX_UPLOAD_SIZE_MB` | Maximum PDF upload size in MB | `10` |
+## Variáveis de Ambiente
 
-## Project Structure
+| Variável | Descrição | Padrão |
+|----------|-----------|--------|
+| `ANTHROPIC_API_KEY` | Chave da API (obrigatório) | — |
+| `DATABASE_URL` | URL de conexão do PostgreSQL | `postgresql://postgres:postgres@localhost:5432/resume_analyzer` |
+| `ANALYSIS_MODEL` | Modelo utilizado para análise | `claude-opus-4-6` |
+| `LOG_LEVEL` | Nível de log | `INFO` |
+| `MAX_UPLOAD_SIZE_MB` | Tamanho máximo do PDF em MB | `10` |
+
+---
+
+## Estrutura do Projeto
 
 ```
 resume-analyzer-api/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml              # CI pipeline (lint + test)
+│       └── ci.yml                  # Pipeline CI (lint + testes)
 ├── alembic/
 │   ├── versions/
-│   │   └── 001_initial_schema.py
+│   │   └── 001_initial_schema.py   # Migração inicial
 │   ├── env.py
 │   └── script.py.mako
 ├── app/
 │   ├── api/
 │   │   └── routes/
-│   │       ├── analyze.py      # POST /analyze
-│   │       └── history.py      # GET /history, GET /history/{id}
+│   │       ├── analyze.py          # POST /analyze
+│   │       └── history.py          # GET /history, GET /history/{id}
 │   ├── core/
-│   │   ├── config.py           # Application settings
-│   │   ├── exceptions.py       # Domain exceptions
-│   │   └── logging_config.py   # Structured JSON logging
+│   │   ├── config.py               # Configurações da aplicação
+│   │   ├── exceptions.py           # Exceções de domínio
+│   │   └── logging_config.py       # Log estruturado em JSON
 │   ├── domain/
-│   │   └── models.py           # Pydantic schemas
+│   │   └── models.py               # Schemas Pydantic
 │   ├── infra/
 │   │   └── database/
-│   │       ├── connection.py   # SQLAlchemy engine and ORM model
-│   │       └── repositories.py # Data access layer
+│   │       ├── connection.py       # Engine SQLAlchemy e modelo ORM
+│   │       └── repositories.py     # Camada de acesso a dados
 │   ├── services/
-│   │   ├── analyzer.py         # Resume analysis service
-│   │   └── pdf_extractor.py    # PDF text extraction
-│   └── main.py                 # FastAPI application
+│   │   ├── analyzer.py             # Serviço de análise de currículo
+│   │   └── pdf_extractor.py        # Extração de texto do PDF
+│   └── main.py                     # Aplicação FastAPI
 ├── tests/
 │   ├── conftest.py
 │   └── test_analyze.py
@@ -181,10 +189,18 @@ resume-analyzer-api/
 └── requirements.txt
 ```
 
-## Running Tests
+---
 
-Tests use an in-memory SQLite database and mock external services — no PostgreSQL or API key required.
+## Testes
+
+Os testes utilizam SQLite em memória e mocks dos serviços externos. Não é necessário PostgreSQL nem chave de API válida para executá-los.
 
 ```bash
 pytest tests/ -v
 ```
+
+---
+
+## Licença
+
+MIT
