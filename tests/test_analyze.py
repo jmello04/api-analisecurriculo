@@ -1,7 +1,5 @@
 from unittest.mock import patch
 
-import pytest
-
 from app.domain.models import AnalysisResult
 
 MOCK_RESULT = AnalysisResult(

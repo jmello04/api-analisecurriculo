@@ -1,5 +1,3 @@
-import math
-from typing import List, Optional, Tuple
 
 from sqlalchemy.orm import Session
 
@@ -29,7 +27,7 @@ class AnalysisRepository:
 
     def list_paginated(
         self, page: int = 1, page_size: int = 20
-    ) -> Tuple[List[ResumeAnalysisORM], int]:
+    ) -> tuple[list[ResumeAnalysisORM], int]:
         total = self.db.query(ResumeAnalysisORM).count()
         offset = (page - 1) * page_size
         items = (
@@ -41,7 +39,7 @@ class AnalysisRepository:
         )
         return items, total
 
-    def get_by_id(self, analysis_id: int) -> Optional[ResumeAnalysisORM]:
+    def get_by_id(self, analysis_id: int) -> ResumeAnalysisORM | None:
         return (
             self.db.query(ResumeAnalysisORM)
             .filter(ResumeAnalysisORM.id == analysis_id)

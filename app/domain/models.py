@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Generic, List, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -9,10 +9,10 @@ T = TypeVar("T")
 class AnalysisResult(BaseModel):
     score: int = Field(..., ge=0, le=100)
     level: str
-    strong_points: List[str]
-    weak_points: List[str]
-    suggestions: List[str]
-    detected_skills: List[str]
+    strong_points: list[str]
+    weak_points: list[str]
+    suggestions: list[str]
+    detected_skills: list[str]
 
 
 class AnalysisResponse(AnalysisResult):
@@ -33,8 +33,8 @@ class AnalysisListItem(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class PaginatedResponse(BaseModel, Generic[T]):
-    items: List[T]
+class PaginatedResponse[T](BaseModel):
+    items: list[T]
     total: int
     page: int
     page_size: int
