@@ -10,7 +10,7 @@ from app.domain.models import AnalysisResult
 
 logger = logging.getLogger(__name__)
 
-_PROMPT_TEMPLATE = """Analise o currículo abaixo e retorne uma avaliação estruturada como objeto JSON.
+_PROMPT_PREFIX = """Analise o currículo abaixo e retorne uma avaliação estruturada como objeto JSON.
 
 O JSON deve conter exatamente estes campos:
 - "score": inteiro entre 0 e 100 representando a qualidade geral do currículo
@@ -21,9 +21,16 @@ O JSON deve conter exatamente estes campos:
 - "detected_skills": lista de habilidades técnicas e comportamentais encontradas no currículo
 
 Conteúdo do currículo:
-{resume_text}
+"""
 
-Retorne apenas JSON válido. Não inclua markdown, blocos de código ou qualquer texto fora do objeto JSON."""
+_PROMPT_SUFFIX = (
+    "\n\nRetorne apenas JSON válido. "
+    "Não inclua markdown, blocos de código ou qualquer texto fora do objeto JSON."
+)
+
+
+def _build_prompt(resume_text: str) -> str:
+    return _PROMPT_PREFIX + resume_text + _PROMPT_SUFFIX
 
 
 class ResumeAnalyzerService:
@@ -35,16 +42,13 @@ class ResumeAnalyzerService:
             message = self.client.messages.create(
                 model=settings.analysis_model,
                 max_tokens=2048,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": _PROMPT_TEMPLATE.format(resume_text=resume_text),
-                    }
-                ],
+                messages=[{"role": "user", "content": _build_prompt(resume_text)}],
             )
         except APIError as exc:
             logger.error("Erro no servico de analise: %s", exc)
-            raise AnalysisServiceError("O serviço de análise está indisponível no momento.") from exc
+            raise AnalysisServiceError(
+                "O serviço de análise está indisponível no momento."
+            ) from exc
         except Exception as exc:
             logger.error("Erro inesperado durante a analise: %s", exc)
             raise AnalysisServiceError("Erro inesperado durante a análise do currículo.") from exc
@@ -58,4 +62,6 @@ class ResumeAnalyzerService:
             return AnalysisResult(**data)
         except (json.JSONDecodeError, ValueError) as exc:
             logger.error("Falha ao interpretar resposta da analise: %s", exc)
-            raise AnalysisServiceError("Não foi possível interpretar o resultado da análise.") from exc
+            raise AnalysisServiceError(
+                "Não foi possível interpretar o resultado da análise."
+            ) from exc

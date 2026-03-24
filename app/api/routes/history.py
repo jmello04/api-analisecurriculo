@@ -14,7 +14,10 @@ router = APIRouter()
     "/history",
     response_model=PaginatedResponse[AnalysisListItem],
     summary="Listar histórico de análises",
-    description="Retorna uma lista paginada de todas as análises realizadas, ordenadas da mais recente para a mais antiga.",
+    description=(
+        "Retorna uma lista paginada de todas as análises realizadas, "
+        "ordenadas da mais recente para a mais antiga."
+    ),
 )
 def listar_historico(
     page: int = Query(1, ge=1, description="Número da página (a partir de 1)"),
@@ -24,7 +27,9 @@ def listar_historico(
     repo = AnalysisRepository(db)
     itens, total = repo.list_paginated(page=page, page_size=page_size)
     paginas = math.ceil(total / page_size) if total > 0 else 0
-    return PaginatedResponse(items=itens, total=total, page=page, page_size=page_size, pages=paginas)
+    return PaginatedResponse(
+        items=itens, total=total, page=page, page_size=page_size, pages=paginas
+    )
 
 
 @router.get(

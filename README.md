@@ -20,7 +20,8 @@ API REST para análise automática de currículos em PDF, com pontuação, class
 - Migrações de banco de dados com Alembic
 - Logs estruturados em JSON
 - Suporte a CORS
-- Pipeline de CI/CD com GitHub Actions
+- Handler global para erros internos com resposta JSON padronizada
+- Pipeline de CI/CD com GitHub Actions e relatório de cobertura
 
 ---
 
@@ -35,7 +36,7 @@ API REST para análise automática de currículos em PDF, com pontuação, class
 | Validação | Pydantic v2 |
 | Containerização | Docker + Docker Compose |
 | Linting | Ruff |
-| Testes | pytest |
+| Testes | pytest + pytest-cov |
 
 ---
 
@@ -124,9 +125,10 @@ curl "http://localhost:8000/history?page=1&page_size=20"
 ## Desenvolvimento
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
 make test      # Executa os testes
+make coverage  # Testes com relatório de cobertura
 make lint      # Verifica o código
 make format    # Formata o código
 make migrate   # Aplica as migrações
@@ -153,7 +155,7 @@ make up        # Sobe com Docker
 resume-analyzer-api/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                  # Pipeline CI (lint + testes)
+│       └── ci.yml                  # Pipeline CI (lint + testes + cobertura)
 ├── alembic/
 │   ├── versions/
 │   │   └── 001_initial_schema.py   # Migração inicial
@@ -179,24 +181,31 @@ resume-analyzer-api/
 │   │   └── pdf_extractor.py        # Extração de texto do PDF
 │   └── main.py                     # Aplicação FastAPI
 ├── tests/
-│   ├── conftest.py
-│   └── test_analyze.py
+│   ├── conftest.py                 # Fixtures e configuração dos testes
+│   └── test_analyze.py             # Testes dos endpoints
 ├── alembic.ini
 ├── docker-compose.yml
 ├── Dockerfile
 ├── Makefile
 ├── pyproject.toml
-└── requirements.txt
+├── requirements.txt                # Dependências de produção
+└── requirements-dev.txt            # Dependências de desenvolvimento
 ```
 
 ---
 
 ## Testes
 
-Os testes utilizam SQLite em memória e mocks dos serviços externos. Não é necessário PostgreSQL nem chave de API válida para executá-los.
+Os testes utilizam SQLite em memória e mocks dos serviços externos. Não é necessário PostgreSQL nem chave de API válida.
 
 ```bash
 pytest tests/ -v
+```
+
+Para ver a cobertura de código:
+
+```bash
+pytest tests/ --cov=app --cov-report=term-missing
 ```
 
 ---

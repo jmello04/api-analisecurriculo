@@ -5,24 +5,27 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 os.environ.setdefault("ANTHROPIC_API_KEY", "test_key_placeholder")
-os.environ.setdefault("DATABASE_URL", "sqlite:///./test_resume.db")
+os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
-TEST_DB_URL = "sqlite:///./test_resume.db"
+TEST_DB_URL = "sqlite:///:memory:"
 
 
 @pytest.fixture(scope="session")
 def db_engine():
     from app.infra.database.connection import Base
 
-    engine = create_engine(TEST_DB_URL, connect_args={"check_same_thread": False})
+    engine = create_engine(
+        TEST_DB_URL,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     Base.metadata.create_all(bind=engine)
     yield engine
     Base.metadata.drop_all(bind=engine)
     engine.dispose()
-    if os.path.exists("test_resume.db"):
-        os.remove("test_resume.db")
 
 
 @pytest.fixture(scope="session")

@@ -1,7 +1,7 @@
 [project]
 name = "resume-analyzer-api"
 version = "1.0.0"
-description = "REST API for resume analysis with scoring, skill detection, and structured feedback"
+description = "API REST para análise de currículos com pontuação, detecção de habilidades e feedback estruturado"
 readme = "README.md"
 requires-python = ">=3.12"
 
@@ -14,5 +14,12 @@ line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP"]
-ignore = ["E501"]
+select = ["E", "F", "I", "UP", "W"]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["*/__init__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

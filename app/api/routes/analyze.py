@@ -25,7 +25,8 @@ analyzer = ResumeAnalyzerService()
     summary="Analisar currículo",
     description=(
         "Envie um currículo em PDF e receba uma avaliação estruturada com pontuação, "
-        "nível de carreira, pontos fortes, pontos fracos, sugestões de melhoria e habilidades detectadas."
+        "nível de carreira, pontos fortes, pontos fracos, "
+        "sugestões de melhoria e habilidades detectadas."
     ),
 )
 async def analisar_curriculo(
@@ -59,5 +60,10 @@ async def analisar_curriculo(
 
     repo = AnalysisRepository(db)
     registro = repo.save(file.filename, texto, resultado)
-    logger.info("Currículo analisado: arquivo=%s pontuacao=%d nivel=%s", file.filename, resultado.score, resultado.level)
+    logger.info(
+        "Currículo analisado: arquivo=%s pontuacao=%d nivel=%s",
+        file.filename,
+        resultado.score,
+        resultado.level,
+    )
     return registro
