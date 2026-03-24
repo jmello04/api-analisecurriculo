@@ -38,8 +38,8 @@ jobs:
       - name: Instalar dependências
         run: pip install -r requirements-dev.txt
 
-      - name: Executar testes
-        run: pytest tests/ -v --tb=short
+      - name: Executar testes com cobertura
+        run: pytest tests/ -v --tb=short --cov=app --cov-report=term-missing
         env:
           ANTHROPIC_API_KEY: test_key_placeholder
-          DATABASE_URL: sqlite:///./test.db
+          DATABASE_URL: "sqlite:///:memory:"

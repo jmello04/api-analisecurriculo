@@ -3,8 +3,9 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.routes import analyze, history
 from app.core.config import settings
@@ -25,7 +26,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Resume Analyzer API",
-    description="API para análise de currículos com pontuação, detecção de habilidades e feedback estruturado.",
+    description=(
+        "API para análise de currículos com pontuação, "
+        "detecção de habilidades e feedback estruturado."
+    ),
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/docs",
@@ -56,6 +60,17 @@ async def middleware_log_requisicoes(request: Request, call_next):
         request_id,
     )
     return response
+
+
+@app.exception_handler(Exception)
+async def handler_erro_inesperado(request: Request, exc: Exception) -> JSONResponse:
+    if isinstance(exc, HTTPException):
+        raise exc
+    logger.error("Erro interno nao tratado: %s", exc, exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Erro interno do servidor."},
+    )
 
 
 app.include_router(analyze.router, tags=["Análise"])
