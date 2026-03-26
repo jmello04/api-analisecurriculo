@@ -1,8 +1,10 @@
+"""Módulo responsável pela análise estruturada de currículos em texto."""
+
 import json
 import logging
 import re
 
-from anthropic import Anthropic, APIError
+from anthropic import Anthropic, APIConnectionError, APIStatusError, RateLimitError
 
 from app.core.config import settings
 from app.core.exceptions import AnalysisServiceError
@@ -29,39 +31,79 @@ _PROMPT_SUFFIX = (
 )
 
 
-def _build_prompt(resume_text: str) -> str:
+def _build_analysis_prompt(resume_text: str) -> str:
+    """Constrói o prompt completo para análise do currículo.
+
+    Args:
+        resume_text: Texto extraído do currículo a ser analisado.
+
+    Returns:
+        Prompt formatado pronto para envio à API de análise.
+    """
     return _PROMPT_PREFIX + resume_text + _PROMPT_SUFFIX
 
 
 class ResumeAnalyzerService:
+    """Serviço responsável por enviar currículos à API de análise textual e interpretar os resultados.
+
+    A comunicação com a API externa é encapsulada nesta classe.
+    Erros de conectividade, limite de requisições e respostas malformadas
+    são traduzidos para exceções de domínio.
+    """
+
     def __init__(self) -> None:
         self.client = Anthropic(api_key=settings.anthropic_api_key)
 
     def analyze(self, resume_text: str) -> AnalysisResult:
+        """Envia o texto do currículo para análise e retorna o resultado estruturado.
+
+        Args:
+            resume_text: Conteúdo textual extraído do currículo em PDF.
+
+        Returns:
+            Instância de AnalysisResult com score, level, pontos fortes,
+            pontos fracos, sugestões e habilidades detectadas.
+
+        Raises:
+            AnalysisServiceError: Se a API retornar erro, a resposta for malformada
+                ou ocorrer falha inesperada durante o processamento.
+        """
         try:
-            message = self.client.messages.create(
+            api_response = self.client.messages.create(
                 model=settings.analysis_model,
                 max_tokens=2048,
-                messages=[{"role": "user", "content": _build_prompt(resume_text)}],
+                messages=[{"role": "user", "content": _build_analysis_prompt(resume_text)}],
             )
-        except APIError as exc:
-            logger.error("Erro no servico de analise: %s", exc)
+        except APIConnectionError as exc:
+            logger.error("Falha de conexão com o serviço de análise: %s", exc)
             raise AnalysisServiceError(
                 "O serviço de análise está indisponível no momento."
             ) from exc
+        except RateLimitError as exc:
+            logger.error("Limite de requisições atingido no serviço de análise: %s", exc)
+            raise AnalysisServiceError(
+                "Limite de requisições atingido. Aguarde alguns instantes e tente novamente."
+            ) from exc
+        except APIStatusError as exc:
+            logger.error("Erro de status no serviço de análise: %s", exc)
+            raise AnalysisServiceError(
+                f"Erro no serviço de análise (HTTP {exc.status_code})."
+            ) from exc
         except Exception as exc:
-            logger.error("Erro inesperado durante a analise: %s", exc)
-            raise AnalysisServiceError("Erro inesperado durante a análise do currículo.") from exc
+            logger.error("Erro inesperado durante a análise: %s", exc)
+            raise AnalysisServiceError(
+                "Erro inesperado durante a análise do currículo."
+            ) from exc
 
-        raw = message.content[0].text.strip()
-        raw = re.sub(r"^```(?:json)?\s*", "", raw)
-        raw = re.sub(r"\s*```$", "", raw)
+        raw_content = api_response.content[0].text.strip()
+        raw_content = re.sub(r"^```(?:json)?\s*", "", raw_content)
+        raw_content = re.sub(r"\s*```$", "", raw_content)
 
         try:
-            data = json.loads(raw)
-            return AnalysisResult(**data)
+            parsed_payload = json.loads(raw_content)
+            return AnalysisResult(**parsed_payload)
         except (json.JSONDecodeError, ValueError) as exc:
-            logger.error("Falha ao interpretar resposta da analise: %s", exc)
+            logger.error("Falha ao interpretar resposta da análise: %s", exc)
             raise AnalysisServiceError(
                 "Não foi possível interpretar o resultado da análise."
             ) from exc

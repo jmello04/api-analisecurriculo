@@ -1,3 +1,5 @@
+"""Endpoints para consulta do histórico de análises de currículos."""
+
 import math
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -24,11 +26,25 @@ def listar_historico(
     page_size: int = Query(20, ge=1, le=100, description="Quantidade de itens por página"),
     db: Session = Depends(get_db),
 ) -> PaginatedResponse[AnalysisListItem]:
+    """Lista o histórico de análises com paginação baseada em número de página.
+
+    Args:
+        page: Número da página solicitada (base 1).
+        page_size: Quantidade de registros por página (máximo 100).
+        db: Sessão ativa do banco de dados (injetada via dependência).
+
+    Returns:
+        Resposta paginada contendo os itens, total, página atual e total de páginas.
+    """
     repo = AnalysisRepository(db)
-    itens, total = repo.list_paginated(page=page, page_size=page_size)
-    paginas = math.ceil(total / page_size) if total > 0 else 0
+    paginated_items, total = repo.list_paginated(page=page, page_size=page_size)
+    total_pages = math.ceil(total / page_size) if total > 0 else 0
     return PaginatedResponse(
-        items=itens, total=total, page=page, page_size=page_size, pages=paginas
+        items=paginated_items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        pages=total_pages,
     )
 
 
@@ -39,8 +55,20 @@ def listar_historico(
     description="Retorna os detalhes completos de uma análise específica pelo seu ID.",
 )
 def buscar_analise(analysis_id: int, db: Session = Depends(get_db)) -> AnalysisResponse:
+    """Recupera uma análise específica pelo seu identificador único.
+
+    Args:
+        analysis_id: Identificador único da análise.
+        db: Sessão ativa do banco de dados (injetada via dependência).
+
+    Returns:
+        Registro completo da análise correspondente ao ID.
+
+    Raises:
+        HTTPException 404: Se nenhuma análise com o ID informado for encontrada.
+    """
     repo = AnalysisRepository(db)
-    registro = repo.get_by_id(analysis_id)
-    if not registro:
+    saved_record = repo.get_by_id(analysis_id)
+    if not saved_record:
         raise HTTPException(status_code=404, detail="Análise não encontrada.")
-    return registro
+    return saved_record

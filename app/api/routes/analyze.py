@@ -1,3 +1,5 @@
+"""Endpoint para análise de currículos em PDF."""
+
 import logging
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -33,37 +35,52 @@ async def analisar_curriculo(
     file: UploadFile = File(..., description="Arquivo do currículo em formato PDF"),
     db: Session = Depends(get_db),
 ) -> AnalysisResponse:
+    """Recebe um currículo em PDF, executa a análise e persiste o resultado.
+
+    Args:
+        file: Arquivo PDF enviado via multipart/form-data.
+        db: Sessão ativa do banco de dados (injetada via dependência).
+
+    Returns:
+        Registro de análise recém-criado com score, level, pontos e habilidades.
+
+    Raises:
+        HTTPException 400: Arquivo sem extensão .pdf ou vazio.
+        HTTPException 413: Arquivo excede o limite configurado em MAX_UPLOAD_SIZE_MB.
+        HTTPException 422: Falha na extração de texto do PDF.
+        HTTPException 502: Serviço de análise indisponível ou com erro.
+    """
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Apenas arquivos PDF são aceitos.")
 
-    file_bytes = await file.read()
+    pdf_bytes = await file.read()
 
-    if len(file_bytes) == 0:
+    if len(pdf_bytes) == 0:
         raise HTTPException(status_code=400, detail="O arquivo enviado está vazio.")
 
     max_bytes = settings.max_upload_size_mb * 1024 * 1024
-    if len(file_bytes) > max_bytes:
+    if len(pdf_bytes) > max_bytes:
         raise HTTPException(
             status_code=413,
             detail=f"O arquivo excede o limite de {settings.max_upload_size_mb}MB.",
         )
 
     try:
-        texto = pdf_extractor.extract_text(file_bytes)
+        resume_text = pdf_extractor.extract_text(pdf_bytes)
     except PDFExtractionError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
     try:
-        resultado = analyzer.analyze(texto)
+        analysis_result = analyzer.analyze(resume_text)
     except AnalysisServiceError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
 
     repo = AnalysisRepository(db)
-    registro = repo.save(file.filename, texto, resultado)
+    saved_record = repo.save(file.filename, resume_text, analysis_result)
     logger.info(
         "Currículo analisado: arquivo=%s pontuacao=%d nivel=%s",
         file.filename,
-        resultado.score,
-        resultado.level,
+        analysis_result.score,
+        analysis_result.level,
     )
-    return registro
+    return saved_record
